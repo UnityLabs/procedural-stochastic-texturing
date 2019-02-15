@@ -9,6 +9,8 @@ To use this prototype, either clone the repository into your Asset folder or dow
 More detailed description and instructions:
 [Procedural Stochastic Texturing in Unity](https://blogs.unity3d.com/)
 
+The code works with Unity 2018.3. Since the plugin plugs into parts of the Standard Shader code which has evolved since the initial release in Unity 5, it’s not working with older versions as it is.
+
 This work is the implementation of two recent research publications at Unity Labs, which are the best resource for understanding the technique in detail.
 
 Paper: 					[High-Performance By-Example Noise using a Histogram-Preserving Blending Operator](https://eheitzresearch.wordpress.com/722-2/)
@@ -16,3 +18,4 @@ Paper: 					[High-Performance By-Example Noise using a Histogram-Preserving Blen
 Technical chapter: 		[Procedural Stochastic Textures by Tiling and Blending](https://eheitzresearch.wordpress.com/738-2/)
 
 The comments in the code refer to specific sections of the Technical chapter.
+

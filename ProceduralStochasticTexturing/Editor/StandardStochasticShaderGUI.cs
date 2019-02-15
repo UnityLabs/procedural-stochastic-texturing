@@ -582,13 +582,13 @@ namespace UnityEditor
 			{
 				return data[h * width + w];
 			}
-			public ref Color GetColorRef(int w, int h)
-			{
-				return ref data[h * width + w];
-			}
-			public void SetColorAt(int w, int h, Color value)
+			public void SetColor(int w, int h, Color value)
 			{
 				data[h * width + w] = value;
+			}
+			public void SetColor(int w, int h, int channel, float value)
+			{
+				data[h * width + w][channel] = value;
 			}
 		};
 
@@ -1060,7 +1060,7 @@ namespace UnityEditor
 			{
 				for (int y = 0; y < res.height; y++)
 				{
-					res.SetColorAt(x, y, linearInput || PlayerSettings.colorSpace == ColorSpace.Gamma ?
+					res.SetColor(x, y, linearInput || PlayerSettings.colorSpace == ColorSpace.Gamma ?
 						colors[y * res.width + x] : colors[y * res.width + x].linear);
 				}
 			}
@@ -1191,7 +1191,7 @@ namespace UnityEditor
 						{
 							float v = Tinput.GetColor(x, y)[i];
 							v = (v - 0.5f) / DXTScalers[i] + 0.5f;
-							Tinput.GetColorRef(x, y)[i] = v;
+							Tinput.SetColor(x, y, i, v);
 						}
 			}
 		}
@@ -1295,7 +1295,7 @@ namespace UnityEditor
 				// Gaussian quantile
 				float G = invCDF(U, GAUSSIAN_AVERAGE, GAUSSIAN_STD);
 				// Store
-				T_input.GetColorRef(x, y)[channel] = G;
+				T_input.SetColor(x, y, channel, G);
 			}
 		}
 		
@@ -1326,7 +1326,7 @@ namespace UnityEditor
 				// Get input value 
 				float I = sortedInputValues[index];
 				// Store in LUT
-				Tinv.GetColorRef(i, 0)[channel] = I;
+				Tinv.SetColor(i, 0, channel, I);
 			}
 		}
 		
@@ -1560,7 +1560,7 @@ namespace UnityEditor
 						// Project on eigenvector 
 						float new_channel_value = Vector3.Dot(vec, eigenvectors[channel]);
 						// Store
-						input_decorrelated.GetColorRef(x, y)[channel] = new_channel_value;
+						input_decorrelated.SetColor(x, y, channel, new_channel_value);
 					}
 
 			// Compute ranges of the new color space
@@ -1586,7 +1586,7 @@ namespace UnityEditor
 						// Remap in [0, 1]
 						float remapped_value = (value - colorSpaceRanges[channel].x) / (colorSpaceRanges[channel].y - colorSpaceRanges[channel].x);
 						// Store
-						input_decorrelated.GetColorRef(x, y)[channel] = remapped_value;
+						input_decorrelated.SetColor(x, y, channel, remapped_value);
 					}
 
 			// Compute color space origin and vectors scaled for the normalized range
@@ -1685,7 +1685,7 @@ namespace UnityEditor
 					// Filter look-up table around this position with Gaussian kernel
 					float filteredValue = FilterLUTValueAtx(ref LUT_Tinv, x_texel, window_std, channel);
 					// Store filtered value
-					LUT_Tinv.GetColorRef(i, LOD)[channel] = filteredValue;
+					LUT_Tinv.SetColor(i, LOD, channel, filteredValue);
 				}
 			}
 		}
