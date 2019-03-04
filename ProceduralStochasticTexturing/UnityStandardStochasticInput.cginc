@@ -92,7 +92,6 @@ struct VertexInput
 };
 
 
-
 // --------------Procedural Stochastic Texturing Uniforms----------------------
 // Inverse histogram transformations T^{-1}
 Texture2D   _MainTexInvT;
@@ -305,10 +304,10 @@ float4 StochasticSample(float2 uv, Texture2D Tinput, SamplerState samplerTinput,
 
 float4 TexCoords(VertexInput v)
 {
-    float4 texcoord;
-    texcoord.xy = TRANSFORM_TEX(v.uv0, _MainTexT); // Always source from uv0
-    texcoord.zw = TRANSFORM_TEX(((_UVSec == 0) ? v.uv0 : v.uv1), _DetailAlbedoMapT);
-    return texcoord;
+	float4 texcoord;
+	texcoord.xy = TRANSFORM_TEX(v.uv0, _MainTexT); // Always source from uv0
+	texcoord.zw = TRANSFORM_TEX(((_UVSec == 0) ? v.uv0 : v.uv1), _DetailAlbedoMapT);
+	return texcoord;
 }
 
 half DetailMask(float2 uv)
@@ -329,159 +328,185 @@ half3 Albedo(float4 texcoords)
 	half3 albedo = _Color.rgb * _MainTexT.Sample(sampler_MainTexT, texcoords.xy).rgb;
 #endif
 #if _DETAIL
-    half mask = DetailMask(texcoords.xy);
+	half mask = DetailMask(texcoords.xy);
 
-	#if _STOCHASTIC_DETAILALBEDO
-		half3 detailAlbedo = DecorrelatedStochasticSample(texcoords.zw, _DetailAlbedoMapT, sampler_DetailAlbedoMapT, _DetailAlbedoMapInvT, sampler_DetailAlbedoMapInvT, _DetailAlbedoMapDXTScalers,
-			_DetailAlbedoColorSpaceOrigin, _DetailAlbedoColorSpaceVector1, _DetailAlbedoColorSpaceVector2, _DetailAlbedoColorSpaceVector3).rgb;
-	#else
-		half3 detailAlbedo = _DetailAlbedoMapT.Sample(sampler_DetailAlbedoMapT, texcoords.zw).rgb;
-	#endif
-
-    #if _DETAIL_MULX2
-        albedo *= LerpWhiteTo (detailAlbedo * unity_ColorSpaceDouble.rgb, mask);
-    #elif _DETAIL_MUL
-        albedo *= LerpWhiteTo (detailAlbedo, mask);
-    #elif _DETAIL_ADD
-        albedo += detailAlbedo * mask;
-    #elif _DETAIL_LERP
-        albedo = lerp (albedo, detailAlbedo, mask);
-    #endif
+#if _STOCHASTIC_DETAILALBEDO
+	half3 detailAlbedo = DecorrelatedStochasticSample(texcoords.zw, _DetailAlbedoMapT, sampler_DetailAlbedoMapT, _DetailAlbedoMapInvT, sampler_DetailAlbedoMapInvT, _DetailAlbedoMapDXTScalers,
+		_DetailAlbedoColorSpaceOrigin, _DetailAlbedoColorSpaceVector1, _DetailAlbedoColorSpaceVector2, _DetailAlbedoColorSpaceVector3).rgb;
+#else
+	half3 detailAlbedo = _DetailAlbedoMapT.Sample(sampler_DetailAlbedoMapT, texcoords.zw).rgb;
 #endif
-    return albedo.rgb;
+
+#if _DETAIL_MULX2
+	albedo *= LerpWhiteTo(detailAlbedo * unity_ColorSpaceDouble.rgb, mask);
+#elif _DETAIL_MUL
+	albedo *= LerpWhiteTo(detailAlbedo, mask);
+#elif _DETAIL_ADD
+	albedo += detailAlbedo * mask;
+#elif _DETAIL_LERP
+	albedo = lerp(albedo, detailAlbedo, mask);
+#endif
+#endif
+	return albedo.rgb;
 }
 
 half Alpha(float2 uv)
 {
 #if defined(_SMOOTHNESS_TEXTURE_ALBEDO_CHANNEL_A)
-    return _Color.a;
+	return _Color.a;
 #else
-	#if _STOCHASTIC_ALBEDO
-		return StochasticSample(uv, _MainTexT, sampler_MainTexT, _MainTexInvT, sampler_MainTexInvT).a * _Color.a;
-	#else
-		return _MainTexT.Sample(sampler_MainTexT, uv).a * _Color.a;
-	#endif
+#if _STOCHASTIC_ALBEDO
+	return StochasticSample(uv, _MainTexT, sampler_MainTexT, _MainTexInvT, sampler_MainTexInvT).a * _Color.a;
+#else
+	return _MainTexT.Sample(sampler_MainTexT, uv).a * _Color.a;
+#endif
 #endif
 }
 
 half Occlusion(float2 uv)
 {
 #ifdef _STOCHASTIC_OCCLUSION
-    half occ = StochasticSample(uv, _OcclusionMapT, sampler_OcclusionMapT, _OcclusionMapInvT, sampler_OcclusionMapInvT).g;
+	half occ = StochasticSample(uv, _OcclusionMapT, sampler_OcclusionMapT, _OcclusionMapInvT, sampler_OcclusionMapInvT).g;
 #else
 	half occ = _OcclusionMapT.Sample(sampler_OcclusionMapT, uv).g;
 #endif
-    return LerpOneTo (occ, _OcclusionStrength);
+	return LerpOneTo(occ, _OcclusionStrength);
 }
 
 half4 SpecularGloss(float2 uv)
 {
-    half4 sg;
+	half4 sg;
 #ifdef _SPECGLOSSMAP
-	#if _STOCHASTIC_SPECMETAL
-		half4 temp = StochasticSample(uv, _SpecGlossMapT, sampler_SpecGlossMapT, _SpecGlossMapInvT, sampler_SpecGlossMapInvT);
-	#else
-		half4 temp = _SpecGlossMapT.Sample(sampler_SpecGlossMapT, uv);
-	#endif
-
-    #if defined(_SMOOTHNESS_TEXTURE_ALBEDO_CHANNEL_A)
-        sg.rgb = temp.rgb;
-		#if _STOCHASTIC_ALBEDO
-			sg.a = StochasticSample(uv, _MainTexT, sampler_MainTexT, _MainTexInvT, sampler_MainTexInvT).a;
-		#else
-			sg.a = _MainTexT.Sample(sampler_MainTexT, uv).a;
-		#endif
-    #else
-        sg = temp;
-    #endif
-    sg.a *= _GlossMapScale;
+#if _STOCHASTIC_SPECMETAL
+	half4 temp = StochasticSample(uv, _SpecGlossMapT, sampler_SpecGlossMapT, _SpecGlossMapInvT, sampler_SpecGlossMapInvT);
 #else
-    sg.rgb = _SpecColor.rgb;
-    #ifdef _SMOOTHNESS_TEXTURE_ALBEDO_CHANNEL_A
-		#if _STOCHASTIC_ALBEDO
-			sg.a = StochasticSample(uv, _MainTexT, sampler_MainTexT, _MainTexInvT, sampler_MainTexInvT).a;
-		#else
-			sg.a = _MainTexT.Sample(sampler_MainTexT, uv).a;
-		#endif
-    #else
-        sg.a = _Glossiness;
-    #endif
+	half4 temp = _SpecGlossMapT.Sample(sampler_SpecGlossMapT, uv);
 #endif
-    return sg;
+
+#if defined(_SMOOTHNESS_TEXTURE_ALBEDO_CHANNEL_A)
+	sg.rgb = temp.rgb;
+#if _STOCHASTIC_ALBEDO
+	sg.a = StochasticSample(uv, _MainTexT, sampler_MainTexT, _MainTexInvT, sampler_MainTexInvT).a;
+#else
+	sg.a = _MainTexT.Sample(sampler_MainTexT, uv).a;
+#endif
+#else
+	sg = temp;
+#endif
+	sg.a *= _GlossMapScale;
+#else
+	sg.rgb = _SpecColor.rgb;
+#ifdef _SMOOTHNESS_TEXTURE_ALBEDO_CHANNEL_A
+#if _STOCHASTIC_ALBEDO
+	sg.a = StochasticSample(uv, _MainTexT, sampler_MainTexT, _MainTexInvT, sampler_MainTexInvT).a;
+#else
+	sg.a = _MainTexT.Sample(sampler_MainTexT, uv).a;
+#endif
+#else
+	sg.a = _Glossiness;
+#endif
+#endif
+	return sg;
 }
 
 half2 MetallicGloss(float2 uv)
 {
-    half2 mg;
+	half2 mg;
 #ifdef _METALLICGLOSSMAP
-	#if _STOCHASTIC_SPECMETAL
-		half4 temp = StochasticSample(uv, _MetallicGlossMapT, sampler_MetallicGlossMapT, _MetallicGlossMapInvT, sampler_MetallicGlossMapInvT);
-	#else
-		half4 temp = _MetallicGlossMapT.Sample(sampler_MetallicGlossMapT, uv);
-	#endif
-
-    #ifdef _SMOOTHNESS_TEXTURE_ALBEDO_CHANNEL_A
-        mg.r = temp.r;
-		#if _STOCHASTIC_ALBEDO
-			mg.g = StochasticSample(uv, _MainTexT, sampler_MainTexT, _MainTexInvT, sampler_MainTexInvT).a;
-		#else
-			mg.g = _MainTexT.Sample(sampler_MainTexT, uv).a;
-		#endif
-    #else
-        mg = temp.ra;
-    #endif
-    mg.g *= _GlossMapScale;
+#if _STOCHASTIC_SPECMETAL
+	half4 temp = StochasticSample(uv, _MetallicGlossMapT, sampler_MetallicGlossMapT, _MetallicGlossMapInvT, sampler_MetallicGlossMapInvT);
 #else
-    mg.r = _Metallic;
-    #ifdef _SMOOTHNESS_TEXTURE_ALBEDO_CHANNEL_A
-	#if _STOCHASTIC_ALBEDO
-		mg.g = StochasticSample(uv, _MainTexT, sampler_MainTexT, _MainTexInvT, sampler_MainTexInvT).a * _GlossMapScale;
-	#else
-		mg.g = _MainTexT.Sample(sampler_MainTexT, uv).a * _GlossMapScale;
-	#endif
-    #else
-        mg.g = _Glossiness;
-    #endif
+	half4 temp = _MetallicGlossMapT.Sample(sampler_MetallicGlossMapT, uv);
+#endif
+
+#ifdef _SMOOTHNESS_TEXTURE_ALBEDO_CHANNEL_A
+	mg.r = temp.r;
+#if _STOCHASTIC_ALBEDO
+	mg.g = StochasticSample(uv, _MainTexT, sampler_MainTexT, _MainTexInvT, sampler_MainTexInvT).a;
+#else
+	mg.g = _MainTexT.Sample(sampler_MainTexT, uv).a;
+#endif
+#else
+	mg = temp.ra;
+#endif
+	mg.g *= _GlossMapScale;
+#else
+	mg.r = _Metallic;
+#ifdef _SMOOTHNESS_TEXTURE_ALBEDO_CHANNEL_A
+#if _STOCHASTIC_ALBEDO
+	mg.g = StochasticSample(uv, _MainTexT, sampler_MainTexT, _MainTexInvT, sampler_MainTexInvT).a * _GlossMapScale;
+#else
+	mg.g = _MainTexT.Sample(sampler_MainTexT, uv).a * _GlossMapScale;
+#endif
+#else
+	mg.g = _Glossiness;
+#endif
 #endif
 	return mg;
 }
 
 half2 MetallicRough(float2 uv)
 {
-    half2 mg;
+	half2 mg;
 #ifdef _METALLICGLOSSMAP
-	#if _STOCHASTIC_SPECMETAL
-		mg.r = StochasticSample(uv, _MetallicGlossMapT, sampler_MetallicGlossMapT, _MetallicGlossMapInvT, sampler_MetallicGlossMapInvT).r;
-	#else
-		mg.r = _MetallicGlossMapT.Sample(sampler_MetallicGlossMapT, uv).r;
-	#endif
+#if _STOCHASTIC_SPECMETAL
+	mg.r = StochasticSample(uv, _MetallicGlossMapT, sampler_MetallicGlossMapT, _MetallicGlossMapInvT, sampler_MetallicGlossMapInvT).r;
 #else
-    mg.r = _Metallic;
+	mg.r = _MetallicGlossMapT.Sample(sampler_MetallicGlossMapT, uv).r;
+#endif
+#else
+	mg.r = _Metallic;
 #endif
 
 #ifdef _SPECGLOSSMAP
-	#if _STOCHASTIC_SPECMETAL
-		mg.g = 1.0f - StochasticSample(uv, _SpecGlossMapT, sampler_SpecGlossMapT, _SpecGlossMapInvT, sampler_SpecGlossMapInvT).r;
-	#else
-		mg.g = 1.0f - _SpecGlossMapT.Sample(sampler_SpecGlossMapT, uv).r;
-	#endif
+#if _STOCHASTIC_SPECMETAL
+	mg.g = 1.0f - StochasticSample(uv, _SpecGlossMapT, sampler_SpecGlossMapT, _SpecGlossMapInvT, sampler_SpecGlossMapInvT).r;
 #else
-    mg.g = 1.0f - _Glossiness;
+	mg.g = 1.0f - _SpecGlossMapT.Sample(sampler_SpecGlossMapT, uv).r;
 #endif
-    return mg;
+#else
+	mg.g = 1.0f - _Glossiness;
+#endif
+	return mg;
 }
 
 half3 Emission(float2 uv)
 {
 #ifndef _EMISSION
-    return 0;
+	return 0;
 #else
-	#if _STOCHASTIC_EMISSION
-		return DecorrelatedStochasticSample(uv, _EmissionMapT, sampler_EmissionMapT, _EmissionMapInvT, sampler_EmissionMapInvT, _EmissionMapDXTScalers,
-			_EmissionColorSpaceOrigin, _EmissionColorSpaceVector1, _EmissionColorSpaceVector2, _EmissionColorSpaceVector3).rgb * _EmissionColor.rgb;
-	#else
-		return _EmissionMapT.Sample(sampler_EmissionMapT, uv).rgb * _EmissionColor.rgb;
-	#endif
+#if _STOCHASTIC_EMISSION
+	return DecorrelatedStochasticSample(uv, _EmissionMapT, sampler_EmissionMapT, _EmissionMapInvT, sampler_EmissionMapInvT, _EmissionMapDXTScalers,
+		_EmissionColorSpaceOrigin, _EmissionColorSpaceVector1, _EmissionColorSpaceVector2, _EmissionColorSpaceVector3).rgb * _EmissionColor.rgb;
+#else
+	return _EmissionMapT.Sample(sampler_EmissionMapT, uv).rgb * _EmissionColor.rgb;
+#endif
+#endif
+}
+
+half3 UnpackScaleNormalRGorAG(half4 packednormal, half bumpScale)
+{
+#if defined(UNITY_NO_DXT5nm)
+	half3 normal = packednormal.xyz * 2 - 1;
+#if (SHADER_TARGET >= 30)
+	// SM2.0: instruction count limitation
+	// SM2.0: normal scaler is not supported
+	normal.xy *= bumpScale;
+#endif
+	return normal;
+#else
+	// This do the trick
+	packednormal.x *= packednormal.w;
+
+	half3 normal;
+	normal.xy = (packednormal.xy * 2 - 1);
+#if (SHADER_TARGET >= 30)
+	// SM2.0: instruction count limitation
+	// SM2.0: normal scaler is not supported
+	normal.xy *= bumpScale;
+#endif
+	normal.z = sqrt(1.0 - saturate(dot(normal.xy, normal.xy)));
+	return normal;
 #endif
 }
 
@@ -491,52 +516,52 @@ half3 NormalInTangentSpace(float4 texcoords)
 #if _STOCHASTIC_NORMAL
 	float3 noiseSample = DecorrelatedStochasticSample(texcoords.xy, _BumpMapT, sampler_BumpMapT, _BumpMapInvT, sampler_BumpMapInvT, _BumpMapDXTScalers,
 		_BumpMapColorSpaceOrigin, _BumpMapColorSpaceVector1, _BumpMapColorSpaceVector2, _BumpMapColorSpaceVector3).rgb;
-    half3 normalTangent = UnpackScaleNormal(float4(noiseSample, 1), _BumpScale);
+	half3 normalTangent = UnpackScaleNormalRGorAG(float4(noiseSample, 1), _BumpScale);
 #else
-	half3 normalTangent = UnpackScaleNormal(_BumpMapT.Sample(sampler_BumpMapT, texcoords.xy), _BumpScale);
+	half3 normalTangent = UnpackScaleNormalRGorAG(_BumpMapT.Sample(sampler_BumpMapT, texcoords.xy), _BumpScale);
 #endif
 
 #if _DETAIL && defined(UNITY_ENABLE_DETAIL_NORMALMAP)
-    half mask = DetailMask(texcoords.xy);
+	half mask = DetailMask(texcoords.xy);
 
 	#if _STOCHASTIC_DETAILNORMAL
 		float3 detailNoiseSample = DecorrelatedStochasticSample(texcoords.zw, _DetailNormalMapT, sampler_DetailNormalMapT, _DetailNormalMapInvT, sampler_DetailNormalMapInvT, _DetailNormalMapDXTScalers,
 			_DetailNormalColorSpaceOrigin, _DetailNormalColorSpaceVector1, _DetailNormalColorSpaceVector2, _DetailNormalColorSpaceVector3).rgb;
-		half3 detailNormalTangent = UnpackScaleNormal(float4(detailNoiseSample, 1), _DetailNormalMapScale);
+		half3 detailNormalTangent = UnpackScaleNormalRGorAG(float4(detailNoiseSample, 1), _DetailNormalMapScale);
 	#else
-		half3 detailNormalTangent = UnpackScaleNormal(_DetailNormalMapT.Sample(sampler_DetailNormalMapT, texcoords.zw), _DetailNormalMapScale);
+		half3 detailNormalTangent = UnpackScaleNormalRGorAG(_DetailNormalMapT.Sample(sampler_DetailNormalMapT, texcoords.zw), _DetailNormalMapScale);
 	#endif
 
-    #if _DETAIL_LERP
-        normalTangent = lerp(
-            normalTangent,
-            detailNormalTangent,
-            mask);
-    #else
-        normalTangent = lerp(
-            normalTangent,
-            BlendNormals(normalTangent, detailNormalTangent),
-            mask);
-    #endif
+	#if _DETAIL_LERP
+		normalTangent = lerp(
+			normalTangent,
+			detailNormalTangent,
+			mask);
+	#else
+		normalTangent = lerp(
+			normalTangent,
+			BlendNormals(normalTangent, detailNormalTangent),
+			mask);
+	#endif
 #endif
 
-    return normalTangent;
+	return normalTangent;
 }
 #endif
 
-float4 Parallax (float4 texcoords, half3 viewDir)
+float4 Parallax(float4 texcoords, half3 viewDir)
 {
 #if !defined(_PARALLAXMAP)
 	return texcoords;
 #else
-	#ifdef _STOCHASTIC_HEIGHT
-		half h = StochasticSample(texcoords.xy, _ParallaxMapT, sampler_ParallaxMapT, _ParallaxMapInvT, sampler_ParallaxMapInvT).g;
-	#else
-		half h = _ParallaxMapT.Sample(sampler_ParallaxMapT, texcoords.xy).g;
-	#endif
+#ifdef _STOCHASTIC_HEIGHT
+	half h = StochasticSample(texcoords.xy, _ParallaxMapT, sampler_ParallaxMapT, _ParallaxMapInvT, sampler_ParallaxMapInvT).g;
+#else
+	half h = _ParallaxMapT.Sample(sampler_ParallaxMapT, texcoords.xy).g;
+#endif
 
-		float2 offset = ParallaxOffset1Step (h, _Parallax, viewDir);
-		return float4(texcoords.xy + offset, texcoords.zw + offset);
+	float2 offset = ParallaxOffset1Step(h, _Parallax, viewDir);
+	return float4(texcoords.xy + offset, texcoords.zw + offset);
 #endif
 }
 

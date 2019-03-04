@@ -43,30 +43,31 @@ namespace UnityEditor
 
 		private static class Styles
 		{
-			public static GUIContent uvSetLabel = EditorGUIUtility.TrTextContent("UV Set");
+			public static GUIContent uvSetLabel = new GUIContent("UV Set");
 
-			public static GUIContent albedoText = EditorGUIUtility.TrTextContent("Albedo", "Albedo (RGB) and Transparency (A)");
-			public static GUIContent alphaCutoffText = EditorGUIUtility.TrTextContent("Alpha Cutoff", "Threshold for alpha cutoff");
-			public static GUIContent specularMapText = EditorGUIUtility.TrTextContent("Specular", "Specular (RGB) and Smoothness (A)");
-			public static GUIContent metallicMapText = EditorGUIUtility.TrTextContent("Metallic", "Metallic (R) and Smoothness (A)");
-			public static GUIContent smoothnessText = EditorGUIUtility.TrTextContent("Smoothness", "Smoothness value");
-			public static GUIContent smoothnessScaleText = EditorGUIUtility.TrTextContent("Smoothness", "Smoothness scale factor");
-			public static GUIContent smoothnessMapChannelText = EditorGUIUtility.TrTextContent("Source", "Smoothness texture and channel");
-			public static GUIContent highlightsText = EditorGUIUtility.TrTextContent("Specular Highlights", "Specular Highlights");
-			public static GUIContent reflectionsText = EditorGUIUtility.TrTextContent("Reflections", "Glossy Reflections");
-			public static GUIContent normalMapText = EditorGUIUtility.TrTextContent("Normal Map", "Normal Map");
-			public static GUIContent heightMapText = EditorGUIUtility.TrTextContent("Height Map", "Height Map (G)");
-			public static GUIContent occlusionText = EditorGUIUtility.TrTextContent("Occlusion", "Occlusion (G)");
-			public static GUIContent emissionText = EditorGUIUtility.TrTextContent("Color", "Emission (RGB)");
-			public static GUIContent detailMaskText = EditorGUIUtility.TrTextContent("Detail Mask", "Mask for Secondary Maps (A)");
-			public static GUIContent detailAlbedoText = EditorGUIUtility.TrTextContent("Detail Albedo x2", "Albedo (RGB) multiplied by 2");
-			public static GUIContent detailNormalMapText = EditorGUIUtility.TrTextContent("Normal Map", "Normal Map");
+			public static GUIContent albedoText = new GUIContent("Albedo", "Albedo (RGB) and Transparency (A)");
+			public static GUIContent alphaCutoffText = new GUIContent("Alpha Cutoff", "Threshold for alpha cutoff");
+			public static GUIContent specularMapText = new GUIContent("Specular", "Specular (RGB) and Smoothness (A)");
+			public static GUIContent metallicMapText = new GUIContent("Metallic", "Metallic (R) and Smoothness (A)");
+			public static GUIContent smoothnessText = new GUIContent("Smoothness", "Smoothness value");
+			public static GUIContent smoothnessScaleText = new GUIContent("Smoothness", "Smoothness scale factor");
+			public static GUIContent smoothnessMapChannelText = new GUIContent("Source", "Smoothness texture and channel");
+			public static GUIContent highlightsText = new GUIContent("Specular Highlights", "Specular Highlights");
+			public static GUIContent reflectionsText = new GUIContent("Reflections", "Glossy Reflections");
+			public static GUIContent normalMapText = new GUIContent("Normal Map", "Normal Map");
+			public static GUIContent heightMapText = new GUIContent("Height Map", "Height Map (G)");
+			public static GUIContent occlusionText = new GUIContent("Occlusion", "Occlusion (G)");
+			public static GUIContent emissionText = new GUIContent("Color", "Emission (RGB)");
+			public static GUIContent detailMaskText = new GUIContent("Detail Mask", "Mask for Secondary Maps (A)");
+			public static GUIContent detailAlbedoText = new GUIContent("Detail Albedo x2", "Albedo (RGB) multiplied by 2");
+			public static GUIContent detailNormalMapText = new GUIContent("Normal Map", "Normal Map");
 
 			public static string primaryMapsText = "Main Maps";
 			public static string secondaryMapsText = "Secondary Maps";
 			public static string forwardText = "Forward Rendering Options";
 			public static string renderingMode = "Rendering Mode";
 			public static string advancedText = "Advanced Options";
+			public static GUIContent emissiveWarning = new GUIContent("Emissive value is animated but the material has not been configured to support emissive. Please make sure the material itself has some amount of emissive.");
 			public static readonly string[] blendNames = Enum.GetNames(typeof(BlendMode));
 		}
 
@@ -103,6 +104,7 @@ namespace UnityEditor
 
 		MaterialEditor m_MaterialEditor;
 		WorkflowMode m_WorkflowMode = WorkflowMode.Specular;
+		ColorPickerHDRConfig m_ColorPickerHDRConfig = new ColorPickerHDRConfig(0f, 99f, 1 / 99f, 3f);
 
 		bool m_FirstTimeApply = true;
 
@@ -169,7 +171,7 @@ namespace UnityEditor
 			bumpMapDXTScalers = FindProperty("_BumpMapDXTScalers", props);
 			detailNormalMapDXTScalers = FindProperty("_DetailNormalMapDXTScalers", props);
 			emissionMapDXTScalers = FindProperty("_EmissionMapDXTScalers", props);
-			
+
 			mainTexColorSpaceOrigin = FindProperty("_MainTexColorSpaceOrigin", props);
 			mainTexColorSpaceVector1 = FindProperty("_MainTexColorSpaceVector1", props);
 			mainTexColorSpaceVector2 = FindProperty("_MainTexColorSpaceVector2", props);
@@ -250,7 +252,7 @@ namespace UnityEditor
 				GUILayout.Label(Styles.primaryMapsText, EditorStyles.boldLabel);
 				DoAlbedoArea(material);
 				DoSpecularMetallicArea();
-				DoNormalArea();
+				m_MaterialEditor.TexturePropertySingleLine(Styles.normalMapText, bumpMap, bumpMap.textureValue != null ? bumpScale : null);
 				m_MaterialEditor.TexturePropertySingleLine(Styles.heightMapText, heightMap, heightMap.textureValue != null ? heigtMapScale : null);
 				m_MaterialEditor.TexturePropertySingleLine(Styles.occlusionText, occlusionMap, occlusionMap.textureValue != null ? occlusionStrength : null);
 				m_MaterialEditor.TexturePropertySingleLine(Styles.detailMaskText, detailMask);
@@ -286,8 +288,8 @@ namespace UnityEditor
 
 			EditorGUILayout.Space();
 
-			// NB renderqueue editor is not shown on purpose: we want to override it based on blend mode
 			GUILayout.Label(Styles.advancedText, EditorStyles.boldLabel);
+			m_MaterialEditor.RenderQueueField();
 			m_MaterialEditor.EnableInstancingField();
 			m_MaterialEditor.DoubleSidedGIField();
 		}
@@ -361,18 +363,6 @@ namespace UnityEditor
 			EditorGUI.showMixedValue = false;
 		}
 
-		void DoNormalArea()
-		{
-			m_MaterialEditor.TexturePropertySingleLine(Styles.normalMapText, bumpMap, bumpMap.textureValue != null ? bumpScale : null);
-			if (bumpScale.floatValue != 1 && UnityEditorInternal.InternalEditorUtility.IsMobilePlatform(EditorUserBuildSettings.activeBuildTarget))
-				if (m_MaterialEditor.HelpBoxWithButton(
-					EditorGUIUtility.TrTextContent("Bump scale is not supported on mobile platforms"),
-					EditorGUIUtility.TrTextContent("Fix Now")))
-				{
-					bumpScale.floatValue = 1;
-				}
-		}
-
 		void DoAlbedoArea(Material material)
 		{
 			m_MaterialEditor.TexturePropertySingleLine(Styles.albedoText, albedoMap, albedoColor);
@@ -390,7 +380,7 @@ namespace UnityEditor
 				bool hadEmissionTexture = emissionMap.textureValue != null;
 
 				// Texture and HDR color controls
-				m_MaterialEditor.TexturePropertyWithHDRColor(Styles.emissionText, emissionMap, emissionColorForRendering, false);
+				m_MaterialEditor.TexturePropertyWithHDRColor(Styles.emissionText, emissionMap, emissionColorForRendering, m_ColorPickerHDRConfig, false);
 
 				// If texture was assigned and color was black set color to white
 				float brightness = emissionColorForRendering.colorValue.maxColorComponent;
@@ -546,15 +536,14 @@ namespace UnityEditor
 		}
 
 
-
 		/*********************************************************************/
 		/*********************************************************************/
 		/*************Procedural Stochastic Texturing Pre-process*************/
 		/*********************************************************************/
 		/*********************************************************************/
-		const float GAUSSIAN_AVERAGE = 0.5f;	// Expectation of the Gaussian distribution
-		const float GAUSSIAN_STD = 0.16666f;	// Std of the Gaussian distribution
-		const int LUT_WIDTH = 128;				// Size of the look-up table
+		const float GAUSSIAN_AVERAGE = 0.5f;    // Expectation of the Gaussian distribution
+		const float GAUSSIAN_STD = 0.16666f;    // Std of the Gaussian distribution
+		const int LUT_WIDTH = 128;              // Size of the look-up table
 
 		struct TextureData
 		{
@@ -1056,7 +1045,7 @@ namespace UnityEditor
 			// Copy input texture pixel data
 			Color[] colors = input.GetPixels();
 			TextureData res = new TextureData(input.width, input.height);
-			for(int x = 0; x < res.width; x++)
+			for (int x = 0; x < res.width; x++)
 			{
 				for (int y = 0; y < res.height; y++)
 				{
@@ -1130,10 +1119,10 @@ namespace UnityEditor
 		}
 
 		private void Precomputations(
-			ref TextureData input,		// input: example image
-				List<int> channels,		// input: channels to process
-			ref TextureData Tinput,		// output: T(input) image
-			ref TextureData invT,		// output: T^{-1} look-up table
+			ref TextureData input,      // input: example image
+				List<int> channels,     // input: channels to process
+			ref TextureData Tinput,     // output: T(input) image
+			ref TextureData invT,       // output: T^{-1} look-up table
 			string inputName,
 			ref int stepCounter,
 			int totalSteps)
@@ -1195,7 +1184,7 @@ namespace UnityEditor
 						}
 			}
 		}
-		
+
 		/*****************************************************************************/
 		/**************** Section 1.3.1 Target Gaussian distribution *****************/
 		/*****************************************************************************/
@@ -1260,7 +1249,7 @@ namespace UnityEditor
 			float x = sigma * Mathf.Sqrt(2.0f) * ErfInv(2.0f * U - 1.0f) + mu;
 			return x;
 		}
-		
+
 		/*****************************************************************************/
 		/**** Section 1.3.2 Applying the histogram transformation T on the input *****/
 		/*****************************************************************************/
@@ -1298,7 +1287,7 @@ namespace UnityEditor
 				T_input.SetColor(x, y, channel, G);
 			}
 		}
-		
+
 		/*****************************************************************************/
 		/** Section 1.3.3 Precomputing the inverse histogram transformation T^{-1} ***/
 		/*****************************************************************************/
@@ -1329,7 +1318,7 @@ namespace UnityEditor
 				Tinv.SetColor(i, 0, channel, I);
 			}
 		}
-		
+
 		/*****************************************************************************/
 		/******** Section 1.4 Improvement: using a decorrelated color space **********/
 		/*****************************************************************************/
@@ -1355,7 +1344,7 @@ namespace UnityEditor
 					GB += col.g * col.b;
 				}
 			}
-				
+
 			R /= (float)(input.width * input.height);
 			G /= (float)(input.width * input.height);
 			B /= (float)(input.width * input.height);
@@ -1370,15 +1359,15 @@ namespace UnityEditor
 			double[][] covarMat = new double[3][];
 			for (int i = 0; i < 3; i++)
 				covarMat[i] = new double[3];
-			covarMat[0][0] = RR - R* R;
-			covarMat[0][1] = RG - R* G;
-			covarMat[0][2] = RB - R* B;
-			covarMat[1][0] = RG - R* G;
-			covarMat[1][1] = GG - G* G;
-			covarMat[1][2] = GB - G* B;
-			covarMat[2][0] = RB - R* B;
-			covarMat[2][1] = GB - G* B;
-			covarMat[2][2] = BB - B* B;
+			covarMat[0][0] = RR - R * R;
+			covarMat[0][1] = RG - R * G;
+			covarMat[0][2] = RB - R * B;
+			covarMat[1][0] = RG - R * G;
+			covarMat[1][1] = GG - G * G;
+			covarMat[1][2] = GB - G * B;
+			covarMat[2][0] = RB - R * B;
+			covarMat[2][1] = GB - G * B;
+			covarMat[2][2] = BB - B * B;
 
 			// Find eigen values and vectors using Jacobi algorithm
 			double[][] eigenVectorsTemp = new double[3][];
@@ -1388,9 +1377,9 @@ namespace UnityEditor
 			ComputeEigenValuesAndVectors(covarMat, eigenVectorsTemp, eigenValuesTemp);
 
 			// Set return values
-			eigenVectors[0] = new Vector3((float) eigenVectorsTemp[0][0], (float) eigenVectorsTemp[1][0], (float) eigenVectorsTemp[2][0]);
-			eigenVectors[1] = new Vector3((float) eigenVectorsTemp[0][1], (float) eigenVectorsTemp[1][1], (float) eigenVectorsTemp[2][1]);
-			eigenVectors[2] = new Vector3((float) eigenVectorsTemp[0][2], (float) eigenVectorsTemp[1][2], (float) eigenVectorsTemp[2][2]);
+			eigenVectors[0] = new Vector3((float)eigenVectorsTemp[0][0], (float)eigenVectorsTemp[1][0], (float)eigenVectorsTemp[2][0]);
+			eigenVectors[1] = new Vector3((float)eigenVectorsTemp[0][1], (float)eigenVectorsTemp[1][1], (float)eigenVectorsTemp[2][1]);
+			eigenVectors[2] = new Vector3((float)eigenVectorsTemp[0][2], (float)eigenVectorsTemp[1][2], (float)eigenVectorsTemp[2][2]);
 		}
 
 		// ----------------------------------------------------------------------------
@@ -1538,12 +1527,12 @@ namespace UnityEditor
 
 		// Main function of Section 1.4
 		private void DecorrelateColorSpace(
-			ref TextureData input,					// input: example image
-			ref TextureData input_decorrelated,		// output: decorrelated input 
-			ref Vector3 colorSpaceVector1,			// output: color space vector1 
-			ref Vector3 colorSpaceVector2,			// output: color space vector2
-			ref Vector3 colorSpaceVector3,			// output: color space vector3
-			ref Vector3 colorSpaceOrigin)			// output: color space origin
+			ref TextureData input,                  // input: example image
+			ref TextureData input_decorrelated,     // output: decorrelated input 
+			ref Vector3 colorSpaceVector1,          // output: color space vector1 
+			ref Vector3 colorSpaceVector2,          // output: color space vector2
+			ref Vector3 colorSpaceVector3,          // output: color space vector3
+			ref Vector3 colorSpaceOrigin)           // output: color space origin
 		{
 			// Compute the eigenvectors of the histogram
 			Vector3[] eigenvectors = new Vector3[3];
@@ -1752,6 +1741,5 @@ namespace UnityEditor
 		MaterialProperty emissionColorSpaceVector1 = null;
 		MaterialProperty emissionColorSpaceVector2 = null;
 		MaterialProperty emissionColorSpaceVector3 = null;
-
 	}
 } // namespace UnityEditor
