@@ -9,7 +9,7 @@ To use this prototype, either clone the repository into your Asset folder or dow
 More detailed description and instructions:
 [Procedural Stochastic Texturing in Unity](https://blogs.unity3d.com/)
 
-The code works with Unity 2018.3. Since the plugin plugs into parts of the Standard Shader code which has evolved since the initial release in Unity 5, it’s not working with older versions as it is.
+The version of the code should work on Unity versions 5.6.x
 
 This work is the implementation of two recent research publications at Unity Labs, which are the best resource for understanding the technique in detail.
 
